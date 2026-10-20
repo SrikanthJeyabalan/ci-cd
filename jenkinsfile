@@ -1,0 +1,80 @@
+
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = 'ap-south-1'
+        ECR_REPOSITORY = 'task-1'
+        AWS_ACCOUNT_ID = "${env.AWS_ACCOUNT_ID}"
+        REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    credentialsId: 'SrikanthJeyabalan',
+                    url: 'https://github.com/SrikanthJeyabalan/ci-cd.git'
+            }
+        }
+
+        stage('Validate Environment') {
+            steps {
+                sh '''
+                    set -e
+                    test -n "$AWS_ACCOUNT_ID"
+                    aws --version
+                    docker --version
+                    aws sts get-caller-identity
+                '''
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                    set -e
+                    docker build -t my-nginx-image:latest .
+                '''
+            }
+        }
+
+        stage('Login to AWS ECR') {
+            steps {
+                sh '''
+                    set -e
+                    aws ecr get-login-password \
+                        --region "$AWS_REGION" |
+                    docker login \
+                        --username AWS \
+                        --password-stdin \
+                        "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+                '''
+            }
+        }
+
+        stage('Push to ECR') {
+            steps {
+                sh '''
+                    set -e
+                    docker tag my-nginx-image:latest "$REPOSITORY_URI:latest"
+                    docker push "$REPOSITORY_URI:latest"
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Docker image pushed to ECR successfully!'
+        }
+
+        failure {
+            echo 'Docker image push to ECR failed. Check the console output.'
+        }
+
+        always {
+            sh 'docker logout "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com" || true'
+        }
+    }
+}
