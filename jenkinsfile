@@ -5,7 +5,7 @@ pipeline {
     environment {
         AWS_REGION = 'ap-south-1'
         ECR_REPOSITORY = 'task-1'
-        AWS_ACCOUNT_ID = "${env.AWS_ACCOUNT_ID}"
+        AWS_ACCOUNT_ID = "058264461329"
         REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
     }
 
@@ -39,7 +39,8 @@ pipeline {
             }
         }
         
-        stage('Test AWS Credentials') {
+
+        stage('Validate Environment') {
             steps {
                 withCredentials([
                     string(credentialsId: 'AWS_ACCESS_KEY_ID',
@@ -48,12 +49,13 @@ pipeline {
                            variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
-                        if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; then
-                            echo "Both AWS credentials are available"
-                        else
-                            echo "AWS credentials are missing"
-                            exit 1
-                        fi
+                        set -e
+                        export AWS_DEFAULT_REGION=ap-south-1
+                        export AWS_REGION=ap-south-1
+        
+                        aws --version
+                        docker --version
+                        aws sts get-caller-identity
                     '''
                 }
             }
