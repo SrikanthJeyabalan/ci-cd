@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         AWS_REGION     = 'ap-south-1'
-        AWS_ACCOUNT_ID = '058264461329'
+        AWS_ACCOUNT_ID = '1234567890'
         ECR_REPOSITORY = 'task-1'
         IMAGE_NAME     = 'my-nginx-image'
         REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
