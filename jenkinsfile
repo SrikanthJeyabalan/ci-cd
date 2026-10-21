@@ -38,6 +38,26 @@ pipeline {
                 '''
             }
         }
+        
+        stage('Test AWS Credentials') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'AWS_ACCESS_KEY_ID',
+                           variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY',
+                           variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh '''
+                        if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; then
+                            echo "Both AWS credentials are available"
+                        else
+                            echo "AWS credentials are missing"
+                            exit 1
+                        fi
+                    '''
+                }
+            }
+        }
 
         stage('Login to AWS ECR') {
             steps {
